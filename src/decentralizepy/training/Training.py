@@ -56,6 +56,9 @@ class Training:
 
         """
         self.model = model
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model.to(self.device)
+
         self.optimizer = optimizer
         self.loss = loss
         self.log_dir = log_dir
@@ -94,6 +97,9 @@ class Training:
         count = 0
         with torch.no_grad():
             for data, target in trainset:
+                data = data.to(self.device)
+                target = target.to(self.device)
+                # output = self.model(data)
                 output = self.model(data)
                 loss_val = self.loss(output, target)
                 epoch_loss += loss_val.item()
@@ -119,6 +125,8 @@ class Training:
             Loss Value for the step
 
         """
+        data = data.to(self.device)
+        target = target.to(self.device)
         self.model.zero_grad()
         output = self.model(data)
         loss_val = self.loss(output, target)
