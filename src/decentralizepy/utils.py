@@ -59,6 +59,7 @@ def get_args():
         Command line arguments
 
     """
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H-%M")
     parser = argparse.ArgumentParser()
     parser.add_argument("-mid", "--machine_id", type=int, default=0)
     parser.add_argument("-ps", "--procs_per_machine", type=int, default=1, nargs="+")
@@ -67,13 +68,13 @@ def get_args():
         "-ld",
         "--log_dir",
         type=str,
-        default="./{}".format(datetime.datetime.now().isoformat(timespec="minutes")),
+        default=f"./{timestamp}",
     )
     parser.add_argument(
         "-wsd",
         "--weights_store_dir",
         type=str,
-        default="./{}_ws".format(datetime.datetime.now().isoformat(timespec="minutes")),
+        default=f"./{timestamp}_ws",
     )
     parser.add_argument("-is", "--iterations", type=int, default=1)
     parser.add_argument("-cf", "--config_file", type=str, default="config.ini")

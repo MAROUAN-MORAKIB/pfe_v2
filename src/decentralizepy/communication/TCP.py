@@ -38,6 +38,7 @@ class TCP(Communication):
         """
         machine_addr = socket.gethostbyname(self.ip_addrs[str(machine_id)])
         port = (2 * rank + 1) + self.offset
+
         assert port > 0
         return "tcp://{}:{}".format(machine_addr, port)
 

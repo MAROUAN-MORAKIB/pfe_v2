@@ -64,20 +64,14 @@ class Model(nn.Module):
             self.accumulated_changes[indices] = 0.0
 
     def dump_weights(self, directory, uid, round):
-        """
-        saves the current model as a pt file into the specified direcectory
+        # Ensure the directory exists
+        
+        Path(directory).mkdir(parents=True, exist_ok=True)
 
-        Parameters
-        ----------
-        directory : str
-            directory in which the weights are dumped
-        uid : int
-            uid of the node, will be used to give the weight a unique name
-        round : int
-            current round, will be used to give the weight a unique name
-
-        """
+        # Save weights
         torch.save(self.state_dict(), Path(directory) / f"{round}_weight_{uid}.pt")
+        
+
 
     def get_weights(self):
         """

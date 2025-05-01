@@ -212,7 +212,7 @@ class Node:
         self.dataset = self.dataset_class(
             self.rank, self.machine_id, self.mapping, **self.dataset_params
         )
-
+        
         logging.info("Dataset instantiation complete.")
 
         self.model_class = getattr(dataset_module, dataset_configs["model_class"])

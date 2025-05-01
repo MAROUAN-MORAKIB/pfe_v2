@@ -1,5 +1,9 @@
 import logging
-
+from torchvision.datasets import ImageFolder
+import os
+import torchvision.models as models
+from decentralizepy.models.Model import Model
+import hashlib
 import torch
 import torch.nn.functional as F
 import torchvision
@@ -32,10 +36,10 @@ class CIFAR10(Dataset):
 
         """
         logging.info("Loading training set.")
-        trainset = torchvision.datasets.CIFAR10(
-            root=self.train_dir, train=True, download=True, transform=self.transform
+        trainset = ImageFolder(
+            root=os.path.join(self.train_dir, "augmented_cifar10"),
+            transform=self.transform
         )
-
         if self.__validating__ and self.validation_source == "Train":
             logging.info("Extracting the validation set from the train set.")
             self.validationset, trainset = torch.utils.data.random_split(
@@ -90,6 +94,21 @@ class CIFAR10(Dataset):
             raise NotImplementedError(
                 "Partitioning method {} not implemented".format(self.partition_niid)
             )
+        # Save the partition into a text file
+        self.save_partition_to_file()
+
+    def save_partition_to_file(self):
+      os.makedirs("partition_logs", exist_ok=True)
+      log_file = f"partition_logs/node_{self.dataset_id}_samples.txt"
+
+      with open(log_file, "w") as f:
+          for idx, (img, label) in enumerate(self.trainset):
+              # Convert the image tensor to bytes
+              img_bytes = img.numpy().tobytes()
+              # Generate a simple hash (fingerprint) for the image
+              img_hash = hashlib.sha256(img_bytes).hexdigest()
+              # Save both hash and label
+              f.write(f"Sample {idx}: Label = {label}, Hash = {img_hash}\n")
 
     def load_testset(self):
         """
@@ -370,6 +389,16 @@ class CIFAR10(Dataset):
         return accuracy, loss_val
 
 
+class MobileNetV2(Model):
+    def __init__(self, num_classes=10):
+        super().__init__()
+        self.backbone = models.mobilenet_v2(weights=None)
+        self.backbone.classifier[1] = nn.Linear(self.backbone.last_channel, num_classes)
+
+    def forward(self, x):
+        return self.backbone(x)
+
+        
 class CNN(Model):
     """
     Class for a CNN Model for CIFAR10

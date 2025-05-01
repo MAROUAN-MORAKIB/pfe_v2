@@ -1,7 +1,8 @@
 import logging
 
 import torch
-
+import json
+import os
 from decentralizepy import utils
 
 
@@ -150,28 +151,45 @@ class Training:
                 count += 1
             logging.debug("Epoch: {} loss: {}".format(epoch, epoch_loss / count))
 
+
+
     def train(self, dataset):
-        """
-        One training iteration
-
-        Parameters
-        ----------
-        dataset : decentralizepy.datasets.Dataset
-            The training dataset. Should implement get_trainset(batch_size, shuffle)
-
-        """
         self.model.train()
+        iter_loss = 0.0
+        count = 0
+        trainset = dataset.get_trainset(self.batch_size, self.shuffle)
 
-        if self.full_epochs:
-            self.train_full(dataset)
+        loss_values = []  # ✅ Store losses per node
+
+        while count < self.rounds:
+            for data, target in trainset:
+                iter_loss += self.trainstep(data, target)
+                count += 1
+                avg_loss = iter_loss / count
+                logging.info(f"Node {self.rank} - Round {count} loss: {avg_loss}")
+                loss_values.append(avg_loss)  # ✅ Append loss at each step
+                
+                if count >= self.rounds:
+                    break
+        
+        # ✅ Ensure the directory exists
+        os.makedirs("logs/nodes", exist_ok=True)
+
+        # ✅ Append loss values instead of overwriting
+        filename = f"logs/nodes/train_loss_node_{self.rank}.json"
+        
+        if os.path.exists(filename):
+            with open(filename, "r") as f:
+                existing_loss = json.load(f)
         else:
-            iter_loss = 0.0
-            count = 0
-            trainset = dataset.get_trainset(self.batch_size, self.shuffle)
-            while count < self.rounds:
-                for data, target in trainset:
-                    iter_loss += self.trainstep(data, target)
-                    count += 1
-                    logging.debug("Round: {} loss: {}".format(count, iter_loss / count))
-                    if count >= self.rounds:
-                        break
+            existing_loss = []
+
+        # ✅ Combine old and new losses
+        total_loss_values = existing_loss + loss_values
+
+        # ✅ Save updated loss history
+        with open(filename, "w") as f:
+            json.dump(total_loss_values, f)
+
+        logging.info(f"Node {self.rank} training loss saved to {filename}")
+
